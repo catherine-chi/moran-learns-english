@@ -127,7 +127,7 @@ async function saveData() {
 function updateProgress() {
     const total = Object.values(vocabLog).reduce((a, b) => a + b, 0);
     const percent = Math.min((total / monthlyGoal) * 100, 100);
-    progressText.innerText = `Progress: ${total} / ${monthlyGoal} words`;
+    progressText.innerText = `Progress: ${total} / ${monthlyGoal} words (${percent.toFixed(0)}%)`;
     progressFill.style.width = percent + "%";
 }
 
