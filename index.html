@@ -19,14 +19,50 @@
     #loginContainer input, #loginContainer button { padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; width: 80%; max-width: 300px; }
     #loginContainer button { background-color: #b58900; color: white; border: none; cursor: pointer; }
     #monthDisplay { font-size: 1.4rem; margin: 20px 0; display:none; }
-    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; width: 100%; max-width: 500px; display:none; }
-    .weekday { font-weight: bold; text-align: center; padding: 5px; color: #7b3f00; }
-    .day { background: #fef6e4; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.1s; }
+
+    /* Responsive calendar grid */
+    .calendar {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+        width: 100%;
+        max-width: 500px;
+        display:none;
+    }
+
+    .weekday { font-weight: bold; text-align: center; padding: 5px; color: #7b3f00; font-size: 1rem; }
+
+    .day {
+        background: #fef6e4;
+        border-radius: 10px;
+        padding-top: 100%; /* makes square */
+        position: relative;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: transform 0.1s;
+    }
     .day:hover { transform: scale(1.05); background: #fff2cc; }
+
+    .day-content {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        font-size: 0.9rem;
+    }
+
     .day-number { font-weight: bold; margin-bottom: 5px; color: #b58900; }
+
     .progress { margin-top: 20px; font-size: 1.2rem; color: #7b3f00; display:none; }
     #progressBar { margin-top: 10px; width: 100%; max-width: 500px; height: 20px; background: #ddd2b3; border-radius: 10px; overflow: hidden; display:none; }
-    #progressFill { height: 100%; background: #b58900; width: 0%; }
+    #progressFill { height: 100%; background: #b58900; width: 0%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.9rem; }
+
+    @media (max-width: 400px) {
+        .weekday { font-size: 0.8rem; }
+        .day-content { font-size: 0.7rem; }
+    }
 </style>
 </head>
 <body>
@@ -129,6 +165,7 @@ function updateProgress() {
     const percent = Math.min((total / monthlyGoal) * 100, 100);
     progressText.innerText = `Progress: ${total} / ${monthlyGoal} words (${percent.toFixed(0)}%)`;
     progressFill.style.width = percent + "%";
+    progressFill.innerText = percent.toFixed(0) + "%";
 }
 
 function renderCalendar() {
@@ -152,7 +189,12 @@ function renderCalendar() {
         const div = document.createElement("div");
         div.className = "day";
         const amount = vocabLog[day] || 0;
-        div.innerHTML = `<div class="day-number">${day}</div><div>${amount} words</div>`;
+        div.innerHTML = `
+          <div class="day-content">
+            <div class="day-number">${day}</div>
+            <div>${amount} words</div>
+          </div>
+        `;
         div.onclick = async () => {
             const newAmount = parseInt(prompt(`How many words learned on day ${day}?`, amount)) || 0;
             vocabLog[day] = newAmount;
@@ -165,4 +207,4 @@ function renderCalendar() {
 }
 </script>
 </body>
-</h
+</html>
