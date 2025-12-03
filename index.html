@@ -20,7 +20,6 @@
     #loginContainer button { background-color: #b58900; color: white; border: none; cursor: pointer; }
     #monthDisplay { font-size: 1.4rem; margin: 20px 0; display:none; }
 
-    /* Responsive calendar grid */
     .calendar {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
@@ -35,7 +34,7 @@
     .day {
         background: #fef6e4;
         border-radius: 10px;
-        padding-top: 100%; /* makes square */
+        padding-top: 100%;
         position: relative;
         cursor: pointer;
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -165,7 +164,6 @@ function updateProgress() {
     const percent = Math.min((total / monthlyGoal) * 100, 100);
     progressText.innerText = `Progress: ${total} / ${monthlyGoal} words (${percent.toFixed(0)}%)`;
     progressFill.style.width = percent + "%";
-    progressFill.innerText = percent.toFixed(0) + "%";
 }
 
 function renderCalendar() {
