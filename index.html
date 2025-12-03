@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Moran Learns English</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #faf7ff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 { color: #663399; margin-bottom: 10px; }
+        #monthDisplay { font-size: 1.4rem; margin-bottom: 20px; }
+        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; width: 100%; max-width: 500px; }
+        .day { background: white; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.1s; }
+        .day:hover { transform: scale(1.05); }
+        .day-number { font-weight: bold; margin-bottom: 5px; }
+        .progress { margin-top: 30px; font-size: 1.2rem; color: #333; }
+        #progressBar { margin-top: 10px; width: 100%; max-width: 500px; height: 20px; background: #ddd; border-radius: 10px; overflow: hidden; }
+        #progressFill { height: 100%; background: #663399; width: 0%; }
+    </style>
+</head>
+<body>
+    <h1>Moran Learns English</h1>
+    <div id="monthDisplay"></div>
+    <div class="calendar" id="calendar"></div>
+    <div class="progress" id="progressText"></div>
+    <div id="progressBar"><div id="progressFill"></div></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCblUJbhFIjKXeFKIOzoQKdS-5AP92KHOw",
+            authDomain: "moran-learns-english.firebaseapp.com",
+            projectId: "moran-learns-english",
+            storageBucket: "moran-learns-english.firebasestorage.app",
+            messagingSenderId: "236726052976",
+            appId: "1:236726052976:web:5666a1010e065dee44ecb5",
+            measurementId: "G-Q72265Y0SK"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const monthlyGoal = 600;
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        const monthDisplay = document.getElementById("monthDisplay");
+        const calendar = document.getElementById("calendar");
+        const progressText = document.getElementById("progressText");
+        const progressFill = document.getElementById("progressFill");
+
+        monthDisplay.innerText = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
+
+        let vocabLog = {};
+
+        async function loadData() {
+            const docRef = doc(db, "vocabLogs", `${year}-${month+1}`);
+            const snapshot = await getDoc(docRef);
+            vocabLog = snapshot.exists() ? snapshot.data() : {};
+            renderCalendar();
+            updateProgress();
+        }
+
+        async function saveData() {
+            const docRef = doc(db, "vocabLogs", `${year}-${month+1}`);
+            await setDoc(docRef, vocabLog);
+        }
+
+        function updateProgress() {
+            const total = Object.values(vocabLog).reduce((a, b) => a + b, 0);
+            const percent = Math.min((total / monthlyGoal) * 100, 100);
+            progressText.innerText = `Progress: ${total} / ${monthlyGoal} words`;
+            progressFill.style.width = percent + "%";
+        }
+
+        function renderCalendar() {
+            calendar.innerHTML = "";
+            for (let day = 1; day <= daysInMonth; day++) {
+                const div = document.createElement("div");
+                div.className = "day";
+                const amount = vocabLog[day] || 0;
+                div.innerHTML = `<div class="day-number">${day}</div><div>${amount} words</div>`;
+
+                div.onclick = async () => {
+                    const newAmount = parseInt(prompt(`How many words learned on day ${day}?`, amount)) || 0;
+                    vocabLog[day] = newAmount;
+                    await saveData();
+                    renderCalendar();
+                    updateProgress();
+                };
+
+                calendar.appendChild(div);
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
