@@ -7,32 +7,37 @@
 <style>
     body {
         font-family: Arial, sans-serif;
-        background: #fdf6e3; /* light tan */
+        background: #fdf6e3;
         margin: 0;
         padding: 20px;
         display: flex;
         flex-direction: column;
         align-items: center;
     }
-    h1 { color: #b58900; margin-bottom: 10px; } /* dark yellow */
-    #monthDisplay { font-size: 1.4rem; margin: 20px 0; }
-    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; width: 100%; max-width: 500px; }
-    .weekday { font-weight: bold; text-align: center; padding: 5px; color: #7b3f00; } /* brown */
+    h1 { color: #b58900; margin-bottom: 10px; }
+    #loginContainer { display: flex; flex-direction: column; align-items: center; margin-top: 50px; }
+    #loginContainer input, #loginContainer button { padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; width: 80%; max-width: 300px; }
+    #loginContainer button { background-color: #b58900; color: white; border: none; cursor: pointer; }
+    #monthDisplay { font-size: 1.4rem; margin: 20px 0; display:none; }
+    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; width: 100%; max-width: 500px; display:none; }
+    .weekday { font-weight: bold; text-align: center; padding: 5px; color: #7b3f00; }
     .day { background: #fef6e4; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.1s; }
     .day:hover { transform: scale(1.05); background: #fff2cc; }
     .day-number { font-weight: bold; margin-bottom: 5px; color: #b58900; }
-    .progress { margin-top: 20px; font-size: 1.2rem; color: #7b3f00; }
-    #progressBar { margin-top: 10px; width: 100%; max-width: 500px; height: 20px; background: #ddd2b3; border-radius: 10px; overflow: hidden; }
+    .progress { margin-top: 20px; font-size: 1.2rem; color: #7b3f00; display:none; }
+    #progressBar { margin-top: 10px; width: 100%; max-width: 500px; height: 20px; background: #ddd2b3; border-radius: 10px; overflow: hidden; display:none; }
     #progressFill { height: 100%; background: #b58900; width: 0%; }
-    @media (max-width: 400px) {
-        .day { padding: 8px; }
-        .day-number { font-size: 0.9rem; }
-        .progress { font-size: 0.9rem; }
-    }
 </style>
 </head>
 <body>
 <h1>Moran Learns English</h1>
+
+<div id="loginContainer">
+    <input type="email" id="emailInput" placeholder="Email" />
+    <input type="password" id="passwordInput" placeholder="Password" />
+    <button id="loginButton">Login</button>
+</div>
+
 <div id="monthDisplay"></div>
 <div class="calendar" id="calendar"></div>
 <div class="progress" id="progressText"></div>
@@ -41,6 +46,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCblUJbhFIjKXeFKIOzoQKdS-5AP92KHOw",
@@ -54,6 +60,17 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
+
+const loginContainer = document.getElementById("loginContainer");
+const emailInput = document.getElementById("emailInput");
+const passwordInput = document.getElementById("passwordInput");
+const loginButton = document.getElementById("loginButton");
+const monthDisplay = document.getElementById("monthDisplay");
+const calendar = document.getElementById("calendar");
+const progressText = document.getElementById("progressText");
+const progressBar = document.getElementById("progressBar");
+const progressFill = document.getElementById("progressFill");
 
 const monthlyGoal = 600;
 const today = new Date();
@@ -61,15 +78,38 @@ const year = today.getFullYear();
 const month = today.getMonth();
 const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-const monthDisplay = document.getElementById("monthDisplay");
-const calendar = document.getElementById("calendar");
-const progressText = document.getElementById("progressText");
-const progressBar = document.getElementById("progressBar");
-const progressFill = document.getElementById("progressFill");
-
 monthDisplay.innerText = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
 
 let vocabLog = {};
+
+loginButton.onclick = () => {
+    const email = emailInput.value;
+    const password = passwordInput.value;
+    signInWithEmailAndPassword(auth, email, password)
+        .then(() => renderApp())
+        .catch(err => alert(err.message));
+};
+
+onAuthStateChanged(auth, user => {
+    if(user){
+        renderApp();
+    } else {
+        loginContainer.style.display = "flex";
+        monthDisplay.style.display = "none";
+        calendar.style.display = "none";
+        progressText.style.display = "none";
+        progressBar.style.display = "none";
+    }
+});
+
+function renderApp(){
+    loginContainer.style.display = "none";
+    monthDisplay.style.display = "block";
+    calendar.style.display = "grid";
+    progressText.style.display = "block";
+    progressBar.style.display = "block";
+    loadData();
+}
 
 async function loadData() {
     const docRef = doc(db, "vocabLogs", `${year}-${month+1}`);
@@ -94,7 +134,6 @@ function updateProgress() {
 function renderCalendar() {
     calendar.innerHTML = "";
 
-    // Weekday headers
     const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     weekdays.forEach(day => {
         const header = document.createElement("div");
@@ -103,14 +142,12 @@ function renderCalendar() {
         calendar.appendChild(header);
     });
 
-    // Empty cells before first day
     const firstDayOfMonth = new Date(year, month, 1).getDay();
     for(let i=0; i<firstDayOfMonth; i++){
         const empty = document.createElement("div");
         calendar.appendChild(empty);
     }
 
-    // Days
     for(let day=1; day<=daysInMonth; day++){
         const div = document.createElement("div");
         div.className = "day";
@@ -126,8 +163,6 @@ function renderCalendar() {
         calendar.appendChild(div);
     }
 }
-
-loadData();
 </script>
 </body>
-</html>
+</h
