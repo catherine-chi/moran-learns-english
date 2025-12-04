@@ -5,67 +5,133 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Moran Learns English</title>
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background: #fdf6e3;
-        margin: 0;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-    h1 { color: #b58900; margin-bottom: 10px; }
-    #loginContainer { display: flex; flex-direction: column; align-items: center; margin-top: 50px; }
-    #loginContainer input, #loginContainer button { padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; width: 80%; max-width: 300px; }
-    #loginContainer button { background-color: #b58900; color: white; border: none; cursor: pointer; }
-    #monthDisplay { font-size: 1.4rem; margin: 20px 0; display:none; }
+body {
+    font-family: Arial, sans-serif;
+    background: #fdf6e3;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+h1 { color: #b58900; margin-bottom: 10px; }
+#loginContainer { display: flex; flex-direction: column; align-items: center; margin-top: 50px; }
+#loginContainer input, #loginContainer button { padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; width: 80%; max-width: 300px; }
+#loginContainer button { background-color: #b58900; color: white; border: none; cursor: pointer; }
+#monthDisplay { font-size: 1.4rem; margin: 20px 0; display:none; }
 
-    .calendar {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 5px;
-        width: 100%;
-        max-width: 500px;
-        display:none;
-    }
+.calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    width: 100%;
+    max-width: 500px;
+    display:none;
+}
 
-    .weekday { font-weight: bold; text-align: center; padding: 5px; color: #7b3f00; font-size: 1rem; }
+.weekday { font-weight: bold; text-align: center; padding: 5px; color: #7b3f00; font-size: 1rem; }
 
-    .day {
-        background: #fef6e4;
-        border-radius: 10px;
-        padding-top: 100%;
-        position: relative;
-        cursor: pointer;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        transition: transform 0.1s;
-    }
-    .day:hover { transform: scale(1.05); background: #fff2cc; }
+.day {
+    background: #fef6e4;
+    border-radius: 10px;
+    padding-top: 100%;
+    position: relative;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: transform 0.1s;
+    overflow: hidden;
+}
+.day:hover { transform: scale(1.05); background: #fff2cc; }
 
-    .day-content {
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        font-size: 0.9rem;
-    }
+.day-content {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.9rem;
+    pointer-events: none;
+}
 
-    .day-number { font-weight: bold; margin-bottom: 5px; color: #b58900; }
+.day-number { font-weight: bold; margin-bottom: 5px; color: #b58900; }
 
-    .progress { margin-top: 20px; font-size: 1.2rem; color: #7b3f00; display:none; }
-    #progressBar { margin-top: 10px; width: 100%; max-width: 500px; height: 20px; background: #ddd2b3; border-radius: 10px; overflow: hidden; display:none; }
-    #progressFill { height: 100%; background: #b58900; width: 0%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.9rem; }
+.progress { margin-top: 20px; font-size: 1.2rem; color: #7b3f00; display:none; }
+#progressBar { margin-top: 10px; width: 100%; max-width: 500px; height: 20px; background: #ddd2b3; border-radius: 10px; overflow: hidden; display:none; }
+#progressFill { height: 100%; background: #b58900; width: 0%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.9rem; }
 
-    @media (max-width: 400px) {
-        .weekday { font-size: 0.8rem; }
-        .day-content { font-size: 0.7rem; }
-    }
+#vocabModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+#vocabModal .modal-inner {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 92%;
+    max-width: 420px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+#wordListContainer {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 8px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    background: #fdfcf7;
+}
+#wordList {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+#wordList li {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 8px;
+    gap: 8px;
+}
+#wordList .word-text {
+    flex: 1;
+    word-break: break-word;
+}
+#addWordBtn, #closeModalBtn {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    margin-top: 8px;
+    cursor: pointer;
+}
+#addWordBtn { background: #b58900; color: white; }
+#closeModalBtn { background: #777; color: white; }
+#newWordInput { width: 100%; padding: 8px; box-sizing: border-box; margin-bottom: 8px; }
 </style>
 </head>
 <body>
 <h1>Moran Learns English</h1>
+
+<div id="vocabModal" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal-inner">
+    <h2 id="modalTitle">Words for Day</h2>
+    <div id="wordListContainer">
+      <ul id="wordList"></ul>
+    </div>
+    <input id="newWordInput" placeholder="Add new word..." />
+    <button id="addWordBtn">Add Word</button>
+    <button id="closeModalBtn">Close</button>
+  </div>
+</div>
 
 <div id="loginContainer">
     <input type="email" id="emailInput" placeholder="Email" />
@@ -107,12 +173,19 @@ const progressText = document.getElementById("progressText");
 const progressBar = document.getElementById("progressBar");
 const progressFill = document.getElementById("progressFill");
 
+const modal = document.getElementById("vocabModal");
+const modalTitle = document.getElementById("modalTitle");
+const wordList = document.getElementById("wordList");
+const wordListContainer = document.getElementById("wordListContainer");
+const newWordInput = document.getElementById("newWordInput");
+const addWordBtn = document.getElementById("addWordBtn");
+const closeModalBtn = document.getElementById("closeModalBtn");
+
 const monthlyGoal = 583;
 const today = new Date();
 const year = today.getFullYear();
 const month = today.getMonth();
 const daysInMonth = new Date(year, month + 1, 0).getDate();
-
 monthDisplay.innerText = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
 
 let vocabLog = {};
@@ -150,6 +223,9 @@ async function loadData() {
     const docRef = doc(db, "vocabLogs", `${year}-${month+1}`);
     const snapshot = await getDoc(docRef);
     vocabLog = snapshot.exists() ? snapshot.data() : {};
+    for (const k in vocabLog) {
+        if (!Array.isArray(vocabLog[k])) vocabLog[k] = [];
+    }
     renderCalendar();
     updateProgress();
 }
@@ -160,7 +236,7 @@ async function saveData() {
 }
 
 function updateProgress() {
-    const total = Object.values(vocabLog).reduce((a, b) => a + b, 0);
+    const total = Object.values(vocabLog).reduce((sum, arr) => sum + (Array.isArray(arr)? arr.length : 0), 0);
     const percent = Math.min((total / monthlyGoal) * 100, 100);
     progressText.innerText = `Progress: ${total} / ${monthlyGoal} words (${percent.toFixed(0)}%)`;
     progressFill.style.width = percent + "%";
@@ -168,8 +244,7 @@ function updateProgress() {
 
 function renderCalendar() {
     calendar.innerHTML = "";
-
-    const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const weekdays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
     weekdays.forEach(day => {
         const header = document.createElement("div");
         header.className = "weekday";
@@ -178,31 +253,127 @@ function renderCalendar() {
     });
 
     const firstDayOfMonth = new Date(year, month, 1).getDay();
-    for(let i=0; i<firstDayOfMonth; i++){
-        const empty = document.createElement("div");
-        calendar.appendChild(empty);
-    }
+    for(let i=0;i<firstDayOfMonth;i++) calendar.appendChild(document.createElement("div"));
 
     for(let day=1; day<=daysInMonth; day++){
         const div = document.createElement("div");
-        div.className = "day";
-        const amount = vocabLog[day] || 0;
+        div.className="day";
+        const entry = vocabLog[day] || [];
+        const amount = Array.isArray(entry) ? entry.length : 0;
         div.innerHTML = `
           <div class="day-content">
             <div class="day-number">${day}</div>
             <div>${amount} words</div>
           </div>
         `;
-        div.onclick = async () => {
-            const newAmount = parseInt(prompt(`How many words learned on day ${day}?`, amount)) || 0;
-            vocabLog[day] = newAmount;
-            await saveData();
-            renderCalendar();
-            updateProgress();
-        };
+        div.addEventListener("click",()=>openWordModal(day));
         calendar.appendChild(div);
     }
 }
+
+let currentDay = null;
+
+function openWordModal(day){
+    currentDay = String(day);
+    modalTitle.innerText = `Words for Day ${day}`;
+    if (!Array.isArray(vocabLog[currentDay])) vocabLog[currentDay] = [];
+    renderWordList();
+    modal.style.display="flex";
+    modal.setAttribute("aria-hidden","false");
+    newWordInput.focus();
+}
+
+function renderWordList(){
+    wordList.innerHTML="";
+    const list = Array.isArray(vocabLog[currentDay])? vocabLog[currentDay]:[];
+    if(list.length===0){
+        const p=document.createElement("div");
+        p.style.marginBottom="10px";
+        p.innerText="(No words yet)";
+        wordList.appendChild(p);
+    } else {
+        for(let i=list.length-1;i>=0;i--){
+            const li=document.createElement("li");
+
+            // Word span
+            const span=document.createElement("span");
+            span.className="word-text";
+            span.innerText=list[i];
+
+            // Edit button
+            const editBtn = document.createElement("button");
+            editBtn.innerText = "Edit";
+            editBtn.onclick = () => {
+                const input = document.createElement("input");
+                input.type = "text";
+                input.value = list[i];
+                input.style.flex = "1";
+                li.replaceChild(input, span);
+                input.focus();
+
+                // Save on Enter, cancel on Escape
+                input.addEventListener("keydown", async (e) => {
+                    if(e.key === "Enter"){
+                        const newVal = input.value.trim();
+                        if(newVal) list[i] = newVal;
+                        await saveData();
+                        renderWordList();
+                        renderCalendar();
+                        updateProgress();
+                    } else if(e.key === "Escape"){
+                        li.replaceChild(span, input);
+                    }
+                });
+
+                // Optional: blur saves too
+                input.addEventListener("blur", async () => {
+                    li.replaceChild(span, input);
+                });
+            };
+
+            // Delete button
+            const del=document.createElement("button");
+            del.innerText="Delete";
+            del.onclick=async()=>{
+                list.splice(i,1);
+                await saveData();
+                renderWordList();
+                renderCalendar();
+                updateProgress();
+            };
+
+            li.appendChild(span);
+            li.appendChild(editBtn);
+            li.appendChild(del);
+            wordList.appendChild(li);
+        }
+    }
+    wordListContainer.scrollTop = 0;
+}
+
+addWordBtn.onclick=async()=>{
+    const newWord=newWordInput.value.trim();
+    if(!newWord) return;
+    if(!Array.isArray(vocabLog[currentDay])) vocabLog[currentDay]=[];
+    vocabLog[currentDay].push(newWord);
+    newWordInput.value="";
+    await saveData();
+    renderWordList();
+    renderCalendar();
+    updateProgress();
+};
+
+closeModalBtn.onclick=()=>{modal.style.display="none"; modal.setAttribute("aria-hidden","true"); currentDay=null;};
+
+modal.addEventListener("click",(e)=>{
+    if(e.target===modal){modal.style.display="none"; modal.setAttribute("aria-hidden","true"); currentDay=null;}
+});
+
+window.addEventListener("keydown",(e)=>{
+    if(e.key==="Escape" && modal.style.display==="flex"){
+        modal.style.display="none"; modal.setAttribute("aria-hidden","true"); currentDay=null;
+    }
+});
 </script>
 </body>
 </html>
