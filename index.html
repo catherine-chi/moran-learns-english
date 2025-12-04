@@ -57,6 +57,29 @@ h1 { color: #b58900; margin-bottom: 10px; }
 .day-number { font-weight: bold; margin-bottom: 5px; color: #b58900; }
 
 .progress { margin-top: 20px; font-size: 1.2rem; color: #7b3f00; display:none; }
+
+#loadingSpinner {
+  display: none;
+  height: 50px;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.spinner {
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #b58900;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 #progressBar { margin-top: 10px; width: 100%; max-width: 500px; height: 20px; background: #ddd2b3; border-radius: 10px; overflow: hidden; display:none; }
 #progressFill { height: 100%; background: #b58900; width: 0%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.9rem; }
 
@@ -149,6 +172,14 @@ h1 { color: #b58900; margin-bottom: 10px; }
     <button id="loginButton">Login</button>
 </div>
 
+<div id="loadingSpinner">
+    <div class="spinner"></div>
+</div>
+
+<style>
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
+
 <div id="monthDisplay"></div>
 <div class="calendar" id="calendar"></div>
 <div class="progress" id="progressText"></div>
@@ -182,6 +213,7 @@ const calendar = document.getElementById("calendar");
 const progressText = document.getElementById("progressText");
 const progressBar = document.getElementById("progressBar");
 const progressFill = document.getElementById("progressFill");
+const loadingSpinner = document.getElementById("loadingSpinner");
 
 const modal = document.getElementById("vocabModal");
 const modalTitle = document.getElementById("modalTitle");
@@ -217,16 +249,21 @@ onAuthStateChanged(auth, user => {
         calendar.style.display = "none";
         progressText.style.display = "none";
         progressBar.style.display = "none";
+        loadingSpinner.style.display = "none";
     }
 });
 
-function renderApp(){
+async function renderApp(){
     loginContainer.style.display = "none";
+    loadingSpinner.style.display = "flex";
+
+    await loadData();
+
+    loadingSpinner.style.display = "none";
     monthDisplay.style.display = "block";
     calendar.style.display = "grid";
     progressText.style.display = "block";
     progressBar.style.display = "block";
-    loadData();
 }
 
 async function loadData() {
