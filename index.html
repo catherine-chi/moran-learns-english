@@ -21,7 +21,7 @@
     }
 
     #loginContainer {
-      display: flex;
+      display: none;
       flex-direction: column;
       align-items: center;
       margin-top: 50px;
@@ -51,12 +51,11 @@
     }
 
     .calendar {
-      display: grid;
+      display: none;
       grid-template-columns: repeat(7, 1fr);
       gap: 5px;
       width: 100%;
       max-width: 500px;
-      display: none;
     }
 
     .weekday {
@@ -336,6 +335,13 @@
         .then(() => renderApp())
         .catch(err => alert(err.message));
     };
+
+    loginContainer.style.display = "none";
+    monthDisplay.style.display = "none";
+    calendar.style.display = "none";
+    progressText.style.display = "none";
+    progressBar.style.display = "none";
+    loadingSpinner.style.display = "none";
 
     onAuthStateChanged(auth, user => {
       if (user) {
