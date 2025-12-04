@@ -283,6 +283,13 @@ function openWordModal(day){
     newWordInput.focus();
 }
 
+newWordInput.addEventListener("keydown", async (e) => {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        await addWordBtn.click();
+    }
+});
+
 function renderWordList(){
     wordList.innerHTML="";
     const list = Array.isArray(vocabLog[currentDay])? vocabLog[currentDay]:[];
@@ -295,12 +302,10 @@ function renderWordList(){
         for(let i=list.length-1;i>=0;i--){
             const li=document.createElement("li");
 
-            // Word span
             const span=document.createElement("span");
             span.className="word-text";
             span.innerText=list[i];
 
-            // Edit button
             const editBtn = document.createElement("button");
             editBtn.innerText = "Edit";
             editBtn.onclick = () => {
@@ -311,7 +316,6 @@ function renderWordList(){
                 li.replaceChild(input, span);
                 input.focus();
 
-                // Save on Enter, cancel on Escape
                 input.addEventListener("keydown", async (e) => {
                     if(e.key === "Enter"){
                         const newVal = input.value.trim();
@@ -325,13 +329,11 @@ function renderWordList(){
                     }
                 });
 
-                // Optional: blur saves too
                 input.addEventListener("blur", async () => {
                     li.replaceChild(span, input);
                 });
             };
 
-            // Delete button
             const del=document.createElement("button");
             del.innerText="Delete";
             del.onclick=async()=>{
