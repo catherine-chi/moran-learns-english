@@ -281,6 +281,22 @@
     <div id="progressFill"></div>
   </div>
 
+  <div id="randomModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); justify-content:center; align-items:center; z-index:9999;">
+    <div style="background:white; padding:20px; border-radius:10px; width:92%; max-width:420px; max-height:80vh; overflow-y:auto;">
+      <h2>Random Review List</h2>
+      <div id="randomListContainer" style="border:1px solid #ddd; padding:8px; border-radius:6px; background:#fdfcf7; max-height:50vh; overflow-y:auto;"></div>
+      <button id="closeRandomBtn" style="margin-top:10px; width:100%; padding:10px; background:#777; color:white; border:none; border-radius:5px; cursor:pointer;">Close</button>
+    </div>
+  </div>
+
+  <div id="reviewContainer" style="margin:20px; padding:10px; border:1px solid #ccc; border-radius:10px; max-width:500px; width:100%;">
+    <h3>Generate Random Review List</h3>
+    <label>Start Day: <input id="startDayInput" type="number" min="1" style="width:70px;"></label>
+    <label style="margin-left:10px;">End Day: <input id="endDayInput" type="number" min="1" style="width:70px;"></label>
+    <label style="margin-left:10px;">Count: <input id="countInput" type="number" min="1" style="width:70px;"></label>
+    <button id="generateRandomBtn" style="display:block; margin-top:10px; width:100%; padding:10px; background:#b58900; color:white; border:none; border-radius:5px; cursor:pointer;">Generate</button>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
@@ -319,6 +335,15 @@
     const addWordBtn = document.getElementById("addWordBtn");
     const closeModalBtn = document.getElementById("closeModalBtn");
 
+    const startDayInput = document.getElementById("startDayInput");
+    const endDayInput = document.getElementById("endDayInput");
+    const countInput = document.getElementById("countInput");
+    const generateRandomBtn = document.getElementById("generateRandomBtn");
+
+    const randomModal = document.getElementById("randomModal");
+    const randomListContainer = document.getElementById("randomListContainer");
+    const closeRandomBtn = document.getElementById("closeRandomBtn");
+
     const monthlyGoal = 583;
     const today = new Date();
     const year = today.getFullYear();
@@ -342,6 +367,7 @@
     progressText.style.display = "none";
     progressBar.style.display = "none";
     loadingSpinner.style.display = "none";
+    reviewContainer.style.display = "none";
 
     onAuthStateChanged(auth, user => {
       if (user) {
@@ -367,6 +393,7 @@
       calendar.style.display = "grid";
       progressText.style.display = "block";
       progressBar.style.display = "block";
+      reviewContainer.style.display = "block";
     }
 
     async function loadData() {
@@ -504,6 +531,49 @@
       }
       wordListContainer.scrollTop = 0;
     }
+
+    function getRandomItems(arr, count) {
+      const shuffled = [...arr].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, count);
+    }
+
+    generateRandomBtn.onclick = () => {
+      const start = parseInt(startDayInput.value);
+      const end = parseInt(endDayInput.value);
+      const count = parseInt(countInput.value);
+
+      if (isNaN(start) || isNaN(end) || isNaN(count) || start < 1 || end < start) {
+        alert("Invalid range or count");
+        return;
+      }
+
+      let pool = [];
+      for (let d = start; d <= end; d++) {
+        if (Array.isArray(vocabLog[d])) {
+          pool = pool.concat(vocabLog[d]);
+        }
+      }
+
+
+      if (pool.length === 0) {
+        alert("No words in this date range.");
+        return;
+      }
+
+      const result = getRandomItems(pool, Math.min(count, pool.length));
+
+      randomListContainer.innerHTML = `
+        <ol>
+          ${result.map(w => `<li>${w}</li>`).join("")}
+        </ol>
+      `;
+      randomModal.style.display = "flex";
+    };
+
+
+    closeRandomBtn.onclick = () => {
+      randomModal.style.display = "none";
+    };
 
     addWordBtn.onclick = async () => {
       const newWord = newWordInput.value.trim();
