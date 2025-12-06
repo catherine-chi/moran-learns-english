@@ -274,7 +274,11 @@
     <div class="spinner"></div>
   </div>
 
-  <div id="monthDisplay"></div>
+  <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+    <button id="prevMonthBtn">◀ Prev Month</button>
+    <div id="monthDisplay"></div>
+    <button id="nextMonthBtn">Next Month ▶</button>
+  </div>
   <div class="calendar" id="calendar"></div>
   <div class="progress" id="progressText"></div>
   <div id="progressBar">
@@ -289,17 +293,17 @@
     </div>
   </div>
 
-  <div id="reviewContainer" style="margin:20px; padding:10px; border:1px solid #ccc; border-radius:10px; max-width:500px; width:100%;">
+  <div id="reviewContainer" style="margin:20px; padding:10px; border:1px solid #ccc; border-radius:10px; max-width:500px; width:100%; display:none;">
     <h3>Generate Random Review List</h3>
-    <label>Start Day: <input id="startDayInput" type="number" min="1" style="width:70px;"></label>
-    <label style="margin-left:10px;">End Day: <input id="endDayInput" type="number" min="1" style="width:70px;"></label>
+    <label>Start Date: <input id="startDayInput" type="date" style="width:150px;"></label>
+    <label style="margin-left:10px;">End Date: <input id="endDayInput" type="date" style="width:150px;"></label>
     <label style="margin-left:10px;">Count: <input id="countInput" type="number" min="1" style="width:70px;"></label>
     <button id="generateRandomBtn" style="display:block; margin-top:10px; width:100%; padding:10px; background:#b58900; color:white; border:none; border-radius:5px; cursor:pointer;">Generate</button>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -344,14 +348,18 @@
     const randomListContainer = document.getElementById("randomListContainer");
     const closeRandomBtn = document.getElementById("closeRandomBtn");
 
+    const prevMonthBtn = document.getElementById("prevMonthBtn");
+    const nextMonthBtn = document.getElementById("nextMonthBtn");
+
     const monthlyGoal = 583;
     const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    monthDisplay.innerText = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
+    let currentYear = today.getFullYear();
+    let currentMonth = today.getMonth();
+    let daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    monthDisplay.innerText = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
 
     let vocabLog = {};
+    let currentDay = null;
 
     loginButton.onclick = () => {
       const email = emailInput.value;
@@ -368,6 +376,8 @@
     progressBar.style.display = "none";
     loadingSpinner.style.display = "none";
     reviewContainer.style.display = "none";
+    prevMonthBtn.style.display = "none";
+    nextMonthBtn.style.display = "none";
 
     onAuthStateChanged(auth, user => {
       if (user) {
@@ -386,7 +396,7 @@
       loginContainer.style.display = "none";
       loadingSpinner.style.display = "flex";
 
-      await loadData();
+      await loadMonthData(currentYear, currentMonth);
 
       loadingSpinner.style.display = "none";
       monthDisplay.style.display = "block";
@@ -394,22 +404,52 @@
       progressText.style.display = "block";
       progressBar.style.display = "block";
       reviewContainer.style.display = "block";
+      prevMonthBtn.style.display = "block";
+      nextMonthBtn.style.display = "block";
     }
 
-    async function loadData() {
-      const docRef = doc(db, "vocabLogs", `${year}-${month + 1}`);
-      const snapshot = await getDoc(docRef);
-      vocabLog = snapshot.exists() ? snapshot.data() : {};
-      for (const k in vocabLog) {
-        if (!Array.isArray(vocabLog[k])) vocabLog[k] = [];
+    async function loadMonthData(year, monthIndex) {
+      vocabLog = {};
+      daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+      monthDisplay.innerText = new Date(year, monthIndex).toLocaleString('default', { month: 'long', year: 'numeric' });
+
+      const monthStr = `${year}-${String(monthIndex + 1).padStart(2,'0')}`;
+      const startKey = `${monthStr}-01`;
+      const endKey = `${monthStr}-${String(daysInMonth).padStart(2,'0')}`;
+
+      try {
+        const col = collection(db, 'vocabLogs');
+        const q = query(col, where('date', '>=', startKey), where('date', '<=', endKey), orderBy('date'));
+        const snapshot = await getDocs(q);
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          if (data && data.date) {
+            vocabLog[data.date] = Array.isArray(data.words) ? data.words : [];
+          }
+        });
+      } catch (e) {
+        console.warn('query failed, attempting fallback fetch', e);
+        for (let d = 1; d <= daysInMonth; d++) {
+          const dateKey = `${monthStr}-${String(d).padStart(2,'0')}`;
+          try {
+            const docRef = doc(db, 'vocabLogs', dateKey);
+            const snap = await getDoc(docRef);
+            if (snap.exists()) vocabLog[dateKey] = snap.data().words || [];
+          } catch (err) { }
+        }
       }
+
       renderCalendar();
       updateProgress();
     }
 
-    async function saveData() {
-      const docRef = doc(db, "vocabLogs", `${year}-${month + 1}`);
-      await setDoc(docRef, vocabLog);
+    async function saveDay(dateKey) {
+      try {
+        const docRef = doc(db, 'vocabLogs', dateKey);
+        await setDoc(docRef, { date: dateKey, words: vocabLog[dateKey] || [] });
+      } catch (err) {
+        console.error('saveDay error', err);
+      }
     }
 
     function updateProgress() {
@@ -429,15 +469,17 @@
         calendar.appendChild(header);
       });
 
-      const firstDayOfMonth = new Date(year, month, 1).getDay();
+      const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
       for (let i = 0; i < firstDayOfMonth; i++) {
         calendar.appendChild(document.createElement("div"));
       }
 
+      const monthStr = `${currentYear}-${String(currentMonth + 1).padStart(2,'0')}`;
       for (let day = 1; day <= daysInMonth; day++) {
         const div = document.createElement("div");
         div.className = "day";
-        const entry = vocabLog[day] || [];
+        const dateKey = `${monthStr}-${String(day).padStart(2,'0')}`;
+        const entry = vocabLog[dateKey] || [];
         const amount = Array.isArray(entry) ? entry.length : 0;
         div.innerHTML = `
           <div class="day-content">
@@ -445,16 +487,14 @@
             <div>${amount} words</div>
           </div>
         `;
-        div.addEventListener("click", () => openWordModal(day));
+        div.addEventListener("click", () => openWordModal(dateKey));
         calendar.appendChild(div);
       }
     }
 
-    let currentDay = null;
-
-    function openWordModal(day) {
-      currentDay = String(day);
-      modalTitle.innerText = `Words for Day ${day}`;
+    function openWordModal(dateKey) {
+      currentDay = dateKey;
+      modalTitle.innerText = `Words for ${dateKey}`;
       if (!Array.isArray(vocabLog[currentDay])) vocabLog[currentDay] = [];
       renderWordList();
       modal.style.display = "flex";
@@ -499,7 +539,7 @@
               if (e.key === "Enter") {
                 const newVal = input.value.trim();
                 if (newVal) list[i] = newVal;
-                await saveData();
+                await saveDay(currentDay);
                 renderWordList();
                 renderCalendar();
                 updateProgress();
@@ -517,7 +557,7 @@
           del.innerText = "Delete";
           del.onclick = async () => {
             list.splice(i, 1);
-            await saveData();
+            await saveDay(currentDay);
             renderWordList();
             renderCalendar();
             updateProgress();
@@ -532,59 +572,70 @@
       wordListContainer.scrollTop = 0;
     }
 
-    function getRandomItems(arr, count) {
-      const shuffled = [...arr].sort(() => Math.random() - 0.5);
-      return shuffled.slice(0, count);
-    }
-
-    generateRandomBtn.onclick = () => {
-      const start = parseInt(startDayInput.value);
-      const end = parseInt(endDayInput.value);
-      const count = parseInt(countInput.value);
-
-      if (isNaN(start) || isNaN(end) || isNaN(count) || start < 1 || end < start) {
-        alert("Invalid range or count");
-        return;
-      }
-
-      let pool = [];
-      for (let d = start; d <= end; d++) {
-        if (Array.isArray(vocabLog[d])) {
-          pool = pool.concat(vocabLog[d]);
-        }
-      }
-
-
-      if (pool.length === 0) {
-        alert("No words in this date range.");
-        return;
-      }
-
-      const result = getRandomItems(pool, Math.min(count, pool.length));
-
-      randomListContainer.innerHTML = `
-        <ol>
-          ${result.map(w => `<li>${w}</li>`).join("")}
-        </ol>
-      `;
-      randomModal.style.display = "flex";
-    };
-
-
-    closeRandomBtn.onclick = () => {
-      randomModal.style.display = "none";
-    };
-
     addWordBtn.onclick = async () => {
       const newWord = newWordInput.value.trim();
       if (!newWord) return;
       if (!Array.isArray(vocabLog[currentDay])) vocabLog[currentDay] = [];
       vocabLog[currentDay].push(newWord);
       newWordInput.value = "";
-      await saveData();
+      await saveDay(currentDay);
       renderWordList();
       renderCalendar();
       updateProgress();
+    };
+
+    function getRandomItems(arr, count) {
+      const shuffled = [...arr].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, count);
+    }
+
+    generateRandomBtn.onclick = async () => {
+      const startDate = new Date(startDayInput.value);
+      const endDate = new Date(endDayInput.value);
+      const count = parseInt(countInput.value);
+
+      if (isNaN(startDate) || isNaN(endDate) || isNaN(count) || startDate > endDate) {
+        alert("Invalid date range or count");
+        return;
+      }
+
+      try {
+        const startKey = startDate.toISOString().slice(0, 10);
+        const endKey = endDate.toISOString().slice(0, 10);
+
+        const col = collection(db, 'vocabLogs');
+        const q = query(col, 
+          where('date', '>=', startKey), 
+          where('date', '<=', endKey)
+        );
+
+        const snapshot = await getDocs(q);
+        let pool = [];
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          if (data && Array.isArray(data.words)) {
+            pool = pool.concat(data.words);
+          }
+        });
+
+        if (pool.length === 0) {
+          alert("No words in this date range.");
+          return;
+        }
+
+        const result = getRandomItems(pool, Math.min(count, pool.length));
+        randomListContainer.innerHTML = `<ol>${result.map(w => `<li>${w}</li>`).join("")}</ol>`;
+        randomModal.style.display = "flex";
+
+      } catch (err) {
+        console.error("Failed to generate random list:", err);
+        alert("Error fetching words. Check console for details.");
+      }
+    };
+
+
+    closeRandomBtn.onclick = () => {
+      randomModal.style.display = "none";
     };
 
     closeModalBtn.onclick = () => {
@@ -608,6 +659,24 @@
         currentDay = null;
       }
     });
+
+    prevMonthBtn.onclick = async () => {
+      currentMonth--;
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+      }
+      await loadMonthData(currentYear, currentMonth);
+    };
+
+    nextMonthBtn.onclick = async () => {
+      currentMonth++;
+      if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      }
+      await loadMonthData(currentYear, currentMonth);
+    };
   </script>
 </body>
 </html>
