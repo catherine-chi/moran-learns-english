@@ -247,6 +247,29 @@
         display: block;
       }
     }
+
+    #monthNavigation button {
+      background-color: #b58900;
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      font-size: 1.2rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    #monthNavigation button:hover {
+      background-color: #d29936;
+      transform: scale(1.05);
+    }
+
+    #monthDisplay {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: #7b3f00;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -274,10 +297,10 @@
     <div class="spinner"></div>
   </div>
 
-  <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
-    <button id="prevMonthBtn">◀ Prev Month</button>
+  <div id="monthNavigation" style="display:flex; justify-content:space-between; align-items:center; width:100%; max-width:500px; margin-bottom:10px;">
+    <button id="prevMonthBtn">&lt;</button>
     <div id="monthDisplay"></div>
-    <button id="nextMonthBtn">Next Month ▶</button>
+    <button id="nextMonthBtn">&gt;</button>
   </div>
   <div class="calendar" id="calendar"></div>
   <div class="progress" id="progressText"></div>
@@ -304,7 +327,7 @@
     <div style="margin-bottom:10px;">
       <label>Count: <input id="countInput" type="number" min="1" style="width:70px;"></label>
     </div>
-    
+
     <button id="generateRandomBtn" style="display:block; margin-top:10px; width:100%; padding:10px; background:#b58900; color:white; border:none; border-radius:5px; cursor:pointer;">Generate</button>
   </div>
 
