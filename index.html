@@ -295,9 +295,16 @@
 
   <div id="reviewContainer" style="margin:20px; padding:10px; border:1px solid #ccc; border-radius:10px; max-width:500px; width:100%; display:none;">
     <h3>Generate Random Review List</h3>
-    <label>Start Date: <input id="startDayInput" type="date" style="width:150px;"></label>
-    <label style="margin-left:10px;">End Date: <input id="endDayInput" type="date" style="width:150px;"></label>
-    <label style="margin-left:10px;">Count: <input id="countInput" type="number" min="1" style="width:70px;"></label>
+
+    <div style="display:flex; gap:10px; margin-bottom:10px;">
+      <label>Start Date: <input id="startDayInput" type="date" style="flex:1;"></label>
+      <label>End Date: <input id="endDayInput" type="date" style="flex:1;"></label>
+    </div>
+  
+    <div style="margin-bottom:10px;">
+      <label>Count: <input id="countInput" type="number" min="1" style="width:70px;"></label>
+    </div>
+    
     <button id="generateRandomBtn" style="display:block; margin-top:10px; width:100%; padding:10px; background:#b58900; color:white; border:none; border-radius:5px; cursor:pointer;">Generate</button>
   </div>
 
